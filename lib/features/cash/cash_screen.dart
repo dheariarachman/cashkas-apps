@@ -76,6 +76,16 @@ class _CashScreenState extends State<CashScreen> with AutomaticKeepAliveClientMi
     return total;
   }
 
+  double get _totalDigital {
+    double total = 0;
+    for (var w in _wallets) {
+      if (w.type != WalletType.cash) {
+        total += w.balance;
+      }
+    }
+    return total;
+  }
+
   String _formatCurrency(num amount) {
     return NumberFormat.currency(
       locale: 'id_ID',
@@ -606,9 +616,50 @@ class _CashScreenState extends State<CashScreen> with AutomaticKeepAliveClientMi
             ),
           ],
         ),
-        const SizedBox(height: AppSpacing.sm),
+        const SizedBox(height: AppSpacing.md),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: AppShapes.borderRadiusLg,
+            boxShadow: AppElevation.level1,
+            border: Border.all(color: AppColors.primary, width: 2),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'TOTAL SALDO DIGITAL',
+                      style: AppTypography.labelMedium.copyWith(
+                        letterSpacing: 1.2,
+                        color: AppColors.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.xs),
+                    Text(
+                      _formatCurrency(_totalDigital),
+                      style: AppTypography.displayLarge.copyWith(
+                        color: AppColors.primary,
+                        fontSize: 28,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.account_balance, color: AppColors.primary, size: 32),
+            ],
+          ),
+        ),
+        const SizedBox(height: AppSpacing.lg),
         if (digitalWallets.isEmpty)
-           const Text('Belum ada akun digital')
+           const Padding(
+             padding: EdgeInsets.symmetric(vertical: AppSpacing.md),
+             child: Center(child: Text('Belum ada akun digital')),
+           )
         else
           ...digitalWallets.map((w) => Padding(
             padding: const EdgeInsets.only(bottom: AppSpacing.sm),

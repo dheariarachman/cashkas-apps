@@ -1,13 +1,17 @@
+import 'package:cashkas/features/history/history_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/components/financial_card.dart';
 import '../../core/design/app_colors.dart';
 import '../../core/design/app_spacing.dart';
 import '../../core/design/app_shapes.dart';
 import '../../core/design/app_typography.dart';
 import '../../core/design/app_elevation.dart';
+import '../../core/models/transaction_model.dart';
 import '../../core/providers/financial_provider.dart';
+import '../../core/components/status_badge.dart';
 import '../transaction/new_transaction_bottom_sheet.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -41,6 +45,35 @@ class _DashboardScreenState extends State<DashboardScreen>
       symbol: 'Rp ',
       decimalDigits: 0,
     ).format(amount);
+  }
+
+  String _formatDate(String isoDate) {
+    try {
+      final date = DateTime.parse(isoDate);
+      return DateFormat('HH:mm • dd MMM').format(date);
+    } catch (e) {
+      return isoDate;
+    }
+  }
+
+  IconData _getIconForType(TransactionType type) {
+    switch (type) {
+      case TransactionType.transfer: return Icons.account_balance_outlined;
+      case TransactionType.withdrawal: return Icons.account_balance_wallet_outlined;
+      case TransactionType.topup: return Icons.phone_android_outlined;
+      case TransactionType.ppob: return Icons.bolt;
+      default: return Icons.receipt_long_outlined;
+    }
+  }
+
+  Color _getIconColorForType(TransactionType type) {
+    switch (type) {
+      case TransactionType.transfer: return Colors.blue;
+      case TransactionType.withdrawal: return Colors.indigo;
+      case TransactionType.topup: return Colors.blueAccent;
+      case TransactionType.ppob: return Colors.orange;
+      default: return AppColors.primary;
+    }
   }
 
   @override
@@ -89,17 +122,15 @@ class _DashboardScreenState extends State<DashboardScreen>
                 children: [
                   _buildFilterChips(),
                   const SizedBox(height: AppSpacing.lg),
-                  _buildMainProfitCard(financial.totalProfit),
+                  _buildMainProfitCard(financial.totalProfit, financial.totalTransactions),
                   const SizedBox(height: AppSpacing.md),
                   _buildBalanceCards(financial),
-                  const SizedBox(height: AppSpacing.md),
-                  _buildSummaryCards(financial),
                   const SizedBox(height: AppSpacing.md),
                   if (financial.debtCount > 0) ...[
                     _buildWarningCard(financial.debtCount, financial.totalDebt),
                     const SizedBox(height: AppSpacing.md),
                   ],
-                  _buildActivitySection(financial.weeklyActivity),
+                  _buildLatestTransactions(financial.transactions),
                   const SizedBox(height: AppSpacing.xl * 2),
                 ],
               ),
@@ -160,7 +191,7 @@ class _DashboardScreenState extends State<DashboardScreen>
     );
   }
 
-  Widget _buildMainProfitCard(double profit) {
+  Widget _buildMainProfitCard(double profit, int transactionCount) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(AppSpacing.lg),
@@ -198,9 +229,17 @@ class _DashboardScreenState extends State<DashboardScreen>
                     ),
                   ),
                 ),
-                const SizedBox(height: AppSpacing.xs),
+                const SizedBox(height: AppSpacing.sm),
                 Row(
                   children: [
+                    Text(
+                      '$transactionCount Transaksi',
+                      style: AppTypography.bodySm.copyWith(
+                        color: AppColors.onSurfaceVariant,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
                     const Icon(
                       Icons.trending_up,
                       color: AppColors.success,
@@ -208,8 +247,8 @@ class _DashboardScreenState extends State<DashboardScreen>
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      '+12.5% dari kemarin',
-                      style: AppTypography.bodyMedium.copyWith(
+                      '+12.5%',
+                      style: AppTypography.bodyMd.copyWith(
                         color: AppColors.success,
                         fontWeight: FontWeight.bold,
                       ),
@@ -344,75 +383,6 @@ class _DashboardScreenState extends State<DashboardScreen>
     );
   }
 
-  Widget _buildSummaryCards(FinancialProvider financial) {
-    return Column(
-      children: [
-        _buildSummaryItem(
-          'Total Omset',
-          _formatCurrency(financial.totalOmset),
-          Icons.receipt_long,
-        ),
-        const SizedBox(height: AppSpacing.md),
-        _buildSummaryItem(
-          'Total Transaksi',
-          '${financial.totalTransactions} Sukses',
-          Icons.swap_horiz,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSummaryItem(String title, String value, IconData icon) {
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: AppShapes.borderRadiusLg,
-        boxShadow: AppElevation.level1,
-        border: Border.all(color: AppColors.outlineVariant.withOpacity(0.5)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(AppSpacing.sm),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF3F7FF),
-              borderRadius: AppShapes.borderRadiusMd,
-            ),
-            child: Icon(icon, color: AppColors.primary, size: 20),
-          ),
-          const SizedBox(width: AppSpacing.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: AppTypography.bodyMedium.copyWith(
-                    color: AppColors.onSurfaceVariant,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                Text(
-                  value,
-                  style: AppTypography.numericMd.copyWith(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const Icon(
-            Icons.chevron_right,
-            color: AppColors.outlineVariant,
-            size: 20,
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildWarningCard(int count, double amount) {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
@@ -451,7 +421,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                 const SizedBox(height: 2),
                 RichText(
                   text: TextSpan(
-                    style: AppTypography.bodyMedium.copyWith(
+                    style: AppTypography.bodyMd.copyWith(
                       color: const Color(0xFF93000A),
                     ),
                     children: [
@@ -473,50 +443,54 @@ class _DashboardScreenState extends State<DashboardScreen>
     );
   }
 
-  Widget _buildActivitySection(List<double> activity) {
+  Widget _buildLatestTransactions(List<TransactionModel> transactions) {
+    final latestTransactions = transactions.take(3).toList();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Aktivitas Minggu Ini',
-          style: AppTypography.headlineSmall.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Transaksi Terbaru',
+              style: AppTypography.headlineSmall.copyWith(
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
+              ),
+            ),
+            TextButton(
+              onPressed: () {
+                context.read<FinancialProvider>().setTabIndex(1);
+              },
+              child: const Text('Lihat Semua'),
+            ),
+          ],
         ),
-        const SizedBox(height: AppSpacing.md),
-        Container(
-          height: 200,
-          padding: const EdgeInsets.all(AppSpacing.md),
-          decoration: BoxDecoration(
-            color: const Color(0xFFF3F7FF),
-            borderRadius: AppShapes.borderRadiusLg,
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: activity.asMap().entries.map((entry) {
-              double maxVal = activity.reduce((a, b) => a > b ? a : b);
-              if (maxVal == 0) maxVal = 1;
-              double heightFactor = (entry.value / maxVal) * 150;
-              return _buildBar(
-                heightFactor,
-                isHighlight: entry.value == maxVal && entry.value > 0,
-              );
-            }).toList(),
-          ),
-        ),
+        const SizedBox(height: AppSpacing.sm),
+        if (latestTransactions.isEmpty)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 24),
+            child: Center(child: Text('Belum ada transaksi')),
+          )
+        else
+          ...latestTransactions.map((t) => FinancialCard(
+                title: t.type.name.toUpperCase(),
+                timestamp: _formatDate(t.createdAt),
+                formattedAmount: _formatCurrency(t.amount + t.fee),
+                formattedProfit: '+${_formatCurrency(t.profit)}',
+                type: t.type,
+                badgeStatus: t.status == TransactionStatus.lunas
+                    ? BadgeStatus.lunas
+                    : BadgeStatus.piutang,
+                badgeLabel: t.status == TransactionStatus.lunas ? 'Lunas' : 'Piutang',
+                icon: _getIconForType(t.type),
+                iconColor: _getIconColorForType(t.type),
+                iconBackgroundColor: _getIconColorForType(t.type).withOpacity(0.1),
+                leftBorderColor: t.status == TransactionStatus.piutang ? Colors.orange : null,
+                onTap: () {},
+              )),
       ],
-    );
-  }
-
-  Widget _buildBar(double height, {bool isHighlight = false}) {
-    return Container(
-      width: 32,
-      height: height.clamp(10, 150),
-      decoration: BoxDecoration(
-        color: isHighlight ? const Color(0xFF004496) : const Color(0xFFADC6FF),
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(6)),
-      ),
     );
   }
 }
