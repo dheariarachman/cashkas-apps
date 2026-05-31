@@ -24,6 +24,8 @@ class FinancialProvider extends ChangeNotifier {
   static const int _historyLimit = 10;
   bool _isHistoryLoading = false;
 
+  int _currentTabIndex = 0;
+
   double get totalProfit => _totalProfit;
   double get digitalBalance => _digitalBalance;
   double get cashBalance => _cashBalance;
@@ -35,6 +37,13 @@ class FinancialProvider extends ChangeNotifier {
   List<TransactionModel> get transactions => _transactions;
   List<Map<String, dynamic>> get debts => _debts;
   double get totalBalance => _digitalBalance + _cashBalance;
+
+  int get currentTabIndex => _currentTabIndex;
+
+  void setTabIndex(int index) {
+    _currentTabIndex = index;
+    notifyListeners();
+  }
 
   // History Getters
   List<TransactionModel> get historyTransactions => _historyTransactions;

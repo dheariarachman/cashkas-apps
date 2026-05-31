@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../dashboard/dashboard_screen.dart';
 import '../debt/debt_screen.dart';
@@ -8,6 +9,7 @@ import '../master/master_layanan_screen.dart';
 import '../../core/design/app_colors.dart';
 import '../../core/design/app_spacing.dart';
 import '../../core/design/app_typography.dart';
+import '../../core/providers/financial_provider.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -17,7 +19,6 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> {
-  int _currentIndex = 0;
   late PageController _pageController;
 
   final List<Widget> _screens = [
@@ -29,7 +30,8 @@ class _MainScreenState extends State<MainScreen> {
   @override
   void initState() {
     super.initState();
-    _pageController = PageController(initialPage: _currentIndex);
+    final initialTab = context.read<FinancialProvider>().currentTabIndex;
+    _pageController = PageController(initialPage: initialTab);
   }
 
   @override
@@ -39,9 +41,7 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   void _onPageChanged(int index) {
-    setState(() {
-      _currentIndex = index;
-    });
+    context.read<FinancialProvider>().setTabIndex(index);
   }
 
   void _onItemTapped(int index) {
@@ -54,36 +54,50 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: PageView(
-        controller: _pageController,
-        onPageChanged: _onPageChanged,
-        physics:
-            const NeverScrollableScrollPhysics(), // Disable swipe to keep navigation clean
-        children: _screens,
-      ),
-      drawer: _buildDrawer(context),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _currentIndex,
-        onDestinationSelected: _onItemTapped,
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.dashboard_outlined),
-            selectedIcon: Icon(Icons.dashboard),
-            label: 'Dashboard',
+    return Consumer<FinancialProvider>(
+      builder: (context, provider, _) {
+        // Ensure PageController is in sync with provider index if changed externally
+        if (_pageController.hasClients &&
+            _pageController.page?.round() != provider.currentTabIndex) {
+          _pageController.animateToPage(
+            provider.currentTabIndex,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOutCubic,
+          );
+        }
+
+        return Scaffold(
+          body: PageView(
+            controller: _pageController,
+            onPageChanged: _onPageChanged,
+            physics:
+                const NeverScrollableScrollPhysics(), // Disable swipe to keep navigation clean
+            children: _screens,
           ),
-          NavigationDestination(
-            icon: Icon(Icons.history_outlined),
-            selectedIcon: Icon(Icons.history),
-            label: 'History',
+          drawer: _buildDrawer(context),
+          bottomNavigationBar: NavigationBar(
+            selectedIndex: provider.currentTabIndex,
+            onDestinationSelected: _onItemTapped,
+            destinations: const [
+              NavigationDestination(
+                icon: Icon(Icons.dashboard_outlined),
+                selectedIcon: Icon(Icons.dashboard),
+                label: 'Dashboard',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.history_outlined),
+                selectedIcon: Icon(Icons.history),
+                label: 'History',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.book_outlined),
+                selectedIcon: Icon(Icons.book),
+                label: 'Debt',
+              ),
+            ],
           ),
-          NavigationDestination(
-            icon: Icon(Icons.book_outlined),
-            selectedIcon: Icon(Icons.book),
-            label: 'Debt',
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -139,14 +153,14 @@ class _MainScreenState extends State<MainScreen> {
       ),
       accountName: Text(
         'Toko Maju Jaya',
-        style: AppTypography.bodyLarge.copyWith(
+        style: AppTypography.bodyLg.copyWith(
           color: Colors.white,
           fontWeight: FontWeight.bold,
         ),
       ),
       accountEmail: Text(
         'ID Agen: AG882910',
-        style: AppTypography.bodyMedium.copyWith(color: Colors.white70),
+        style: AppTypography.bodyMd.copyWith(color: Colors.white70),
       ),
     );
   }
@@ -156,7 +170,7 @@ class _MainScreenState extends State<MainScreen> {
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
       child: Text(
         label,
-        style: AppTypography.labelMedium.copyWith(
+        style: AppTypography.labelMd.copyWith(
           color: AppColors.onSurfaceVariant.withOpacity(0.5),
           letterSpacing: 1.5,
         ),
@@ -178,7 +192,7 @@ class _MainScreenState extends State<MainScreen> {
       ),
       title: Text(
         label,
-        style: AppTypography.bodyMedium.copyWith(
+        style: AppTypography.bodyMd.copyWith(
           color: isActive ? AppColors.primary : AppColors.onSurface,
           fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
         ),
