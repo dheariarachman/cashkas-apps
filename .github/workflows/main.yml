@@ -26,7 +26,6 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
-          # flutter-version: '3.x.x' # Opsional: tentukan versi jika perlu
 
       # 4. Ambil dependencies dan build APK
       - name: Install dependencies & Build APK
@@ -34,20 +33,10 @@ jobs:
           flutter pub get
           flutter build apk --release
 
-      # 5. Upload ke Firebase App Distribution menggunakan Action Terbuka yang Stabil
-      - name: upload artifact to Firebase App Distribution
-        uses: FirebaseExtended/action-hosting-deploy@v0
-        with:
-          repoToken: '${{ secrets.GITHUB_TOKEN }}'
-          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_CREDENTIALS }}'
-          projectId: '72225034858'
-        # Kita panggil script CLI manual setelah auth berhasil
-        continue-on-error: false
-
-      # Alternatif pakai action khusus App Distribution yang menggunakan token:
+      # 5. Upload ke Firebase App Distribution menggunakan Firebase Token
       - name: Upload to Firebase App Distribution
-        uses: w9jds/firebase-action@v2.6.0 # Kunci ke versi stabil ini
+        uses: w9jds/firebase-action@master
         with:
           args: appdistribution:distribute build/app/outputs/flutter-apk/app-release.apk --app ${{ secrets.FIREBASE_APP_ID }} --groups "internal-testers"
         env:
-          GCP_SA_KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_CREDENTIALS }}
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
