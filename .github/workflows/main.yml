@@ -1,0 +1,43 @@
+name: Deploy Flutter to Firebase App Distribution
+
+on:
+  push:
+    branches:
+      - main # Jalankan otomatis saat push ke branch main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checkout source code dari GitHub
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Setup Java (Dibutuhkan untuk build Android)
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      # 3. Setup Flutter Environment
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          # flutter-version: '3.x.x' # Opsional: tentukan versi jika perlu
+
+      # 4. Ambil dependencies dan build APK
+      - name: Install dependencies & Build APK
+        run: |
+          flutter pub get
+          flutter build apk --release
+
+      # 5. Upload ke Firebase App Distribution
+      - name: Upload to Firebase App Distribution
+        uses: w9jds/firebase-action@master
+        with:
+          args: appdistribution:distribute build/app/outputs/flutter-apk/app-release.apk --app ${{ secrets.FIREBASE_APP_ID }} --groups "internal-testers"
+        env:
+          GCP_SA_KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_CREDENTIALS }}
