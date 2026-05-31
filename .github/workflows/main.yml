@@ -34,9 +34,19 @@ jobs:
           flutter pub get
           flutter build apk --release
 
-      # 5. Upload ke Firebase App Distribution
+      # 5. Upload ke Firebase App Distribution menggunakan Action Terbuka yang Stabil
+      - name: upload artifact to Firebase App Distribution
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: '${{ secrets.GITHUB_TOKEN }}'
+          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_CREDENTIALS }}'
+          projectId: '72225034858'
+        # Kita panggil script CLI manual setelah auth berhasil
+        continue-on-error: false
+
+      # Alternatif pakai action khusus App Distribution yang menggunakan token:
       - name: Upload to Firebase App Distribution
-        uses: w9jds/firebase-action@master
+        uses: w9jds/firebase-action@v2.6.0 # Kunci ke versi stabil ini
         with:
           args: appdistribution:distribute build/app/outputs/flutter-apk/app-release.apk --app ${{ secrets.FIREBASE_APP_ID }} --groups "internal-testers"
         env:
